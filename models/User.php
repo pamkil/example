@@ -60,48 +60,5 @@ class User extends \yii\db\ActiveRecord
         return $this->hasMany(Transaction::className(), ['user_from' => 'id']);
     }
 
-    /**
-     * @param $sum
-     * @param $user_from
-     * @param $user_to
-     * @throws \Exception
-     * @throws \Throwable
-     */
-    public function transferMoney($sum, $user_from, $user_to)
-    {
 
-        $transactionDB = self::getDb()->beginTransaction();
-        $user_from = User::findOne($user_from);
-        $user_to = User::findOne($user_to);
-        if (empty($user_from) || empty($user_to)){
-            throw new \Exception('Не найден один из пользователей');
-        }
-        if ($sum < 0)
-        {
-            throw new \Exception('Сумма не должна быть меньше 0');
-        }
-        try
-        {
-            $user_to->balance += $sum;
-            $user_to->save();
-            $user_from->balance -= $sum;
-            $user_from->save();
-            $transaction = new Transaction();
-            $transaction->attributes = [
-                'user_from' => $user_from,
-                'user_to' => $user_to,
-                'sum' => $sum,
-                'date' => Yii::$app->formatter->asDate('now', 'Y-m-d H:i:s'),
-            ];
-            $transaction->save();
-            $transactionDB->commit();
-        } catch(\Exception $e) {
-            $transactionDB->rollBack();
-            throw $e;
-        } catch(\Throwable $e) {
-            $transactionDB->rollBack();
-            throw $e;
-        }
-        return $user_from->balance;
-    }
 }

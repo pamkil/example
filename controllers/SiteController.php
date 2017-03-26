@@ -2,6 +2,8 @@
 
 namespace app\controllers;
 
+use app\models\TransferForm;
+use app\models\User;
 use Yii;
 use yii\filters\AccessControl;
 use yii\web\Controller;
@@ -60,7 +62,16 @@ class SiteController extends Controller
      */
     public function actionIndex()
     {
-        return $this->render('index');
+        $users = User::find()->asArray()->all();
+        $users = array_column($users, 'name', 'id');
+        $model = new TransferForm();
+        if ($model->load(Yii::$app->request->post()) && $model->transfer()) {
+            return $this->goHome();
+        }
+        return $this->render('users',[
+            'model' => $model,
+            'users' => $users,
+        ]);
     }
 
     /**

@@ -11,8 +11,9 @@ use Yii;
  * @property integer $user_from
  * @property integer $user_to
  * @property string $date
+ * @property string $sum
  */
-class Transaction extends \yii\db\ActiveRecord
+class Transact extends \yii\db\ActiveRecord
 {
     /**
      * @inheritdoc
@@ -28,9 +29,10 @@ class Transaction extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['user_from', 'user_to', 'date'], 'required'],
+            [['user_from', 'user_to', 'date', 'sum'], 'required'],
             [['user_from', 'user_to'], 'integer'],
             [['date'], 'safe'],
+            [['sum'], 'number'],
         ];
     }
 
@@ -44,6 +46,7 @@ class Transaction extends \yii\db\ActiveRecord
             'user_from' => 'User From',
             'user_to' => 'User To',
             'date' => 'Date',
+            'sum' => 'Sum',
         ];
     }
 }
