@@ -14,8 +14,8 @@ class m170326_151900_create_users_table extends Migration
     {
         $this->createTable('users', [
             'id' => $this->primaryKey(),
-            'name' => $this->string(),
-            'balance' => $this->decimal(10,2),
+            'name' => $this->string()->notNull(),
+            'balance' => $this->decimal(10,2)->notNull(),
         ], 'ENGINE=InnoDB');
     }
 

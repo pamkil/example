@@ -14,9 +14,9 @@ class m170326_152737_create_transactions_table extends Migration
     {
         $this->createTable('transactions', [
             'id' => $this->primaryKey(),
-            'user_from' => $this->integer(),
-            'user_to' => $this->integer(),
-            'date' => $this->dateTime(),
+            'user_from' => $this->integer()->notNull(),
+            'user_to' => $this->integer()->notNull(),
+            'date' => $this->dateTime()->notNull(),
         ], 'ENGINE=InnoDB');
     }
 
