@@ -17,6 +17,7 @@ class m170326_152737_create_transactions_table extends Migration
             'user_from' => $this->integer()->notNull(),
             'user_to' => $this->integer()->notNull(),
             'date' => $this->dateTime()->notNull(),
+            'sum' => $this->decimal(10,2)->notNull(),
         ], 'ENGINE=InnoDB');
     }
 

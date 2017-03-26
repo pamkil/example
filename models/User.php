@@ -2,103 +2,106 @@
 
 namespace app\models;
 
-class User extends \yii\base\Object implements \yii\web\IdentityInterface
+use Yii;
+
+/**
+ * This is the model class for table "users".
+ *
+ * @property integer $id
+ * @property string $name
+ * @property string $balance
+ */
+class User extends \yii\db\ActiveRecord
 {
-    public $id;
-    public $username;
-    public $password;
-    public $authKey;
-    public $accessToken;
-
-    private static $users = [
-        '100' => [
-            'id' => '100',
-            'username' => 'admin',
-            'password' => 'admin',
-            'authKey' => 'test100key',
-            'accessToken' => '100-token',
-        ],
-        '101' => [
-            'id' => '101',
-            'username' => 'demo',
-            'password' => 'demo',
-            'authKey' => 'test101key',
-            'accessToken' => '101-token',
-        ],
-    ];
-
-
     /**
      * @inheritdoc
      */
-    public static function findIdentity($id)
+    public static function tableName()
     {
-        return isset(self::$users[$id]) ? new static(self::$users[$id]) : null;
+        return 'users';
     }
 
     /**
      * @inheritdoc
      */
-    public static function findIdentityByAccessToken($token, $type = null)
+    public function rules()
     {
-        foreach (self::$users as $user) {
-            if ($user['accessToken'] === $token) {
-                return new static($user);
-            }
+        return [
+            [['name', 'balance'], 'required'],
+            [['balance'], 'number'],
+            [['name'], 'string', 'max' => 255],
+        ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function attributeLabels()
+    {
+        return [
+            'id' => 'ID',
+            'name' => 'Name',
+            'balance' => 'Balance',
+        ];
+    }
+
+    public function getComments()
+    {
+        return $this->hasMany(Comment::className(), ['user_id' => 'id']);
+    }
+
+    public function getToTransaction()
+    {
+        return $this->hasMany(Transaction::className(), ['user_to' => 'id']);
+    }
+
+    public function getFromTransaction()
+    {
+        return $this->hasMany(Transaction::className(), ['user_from' => 'id']);
+    }
+
+    /**
+     * @param $sum
+     * @param $user_from
+     * @param $user_to
+     * @throws \Exception
+     * @throws \Throwable
+     */
+    public function transferMoney($sum, $user_from, $user_to)
+    {
+
+        $transactionDB = self::getDb()->beginTransaction();
+        $user_from = User::findOne($user_from);
+        $user_to = User::findOne($user_to);
+        if (empty($user_from) || empty($user_to)){
+            throw new \Exception('Не найден один из пользователей');
         }
-
-        return null;
-    }
-
-    /**
-     * Finds user by username
-     *
-     * @param string $username
-     * @return static|null
-     */
-    public static function findByUsername($username)
-    {
-        foreach (self::$users as $user) {
-            if (strcasecmp($user['username'], $username) === 0) {
-                return new static($user);
-            }
+        if ($sum < 0)
+        {
+            throw new \Exception('Сумма не должна быть меньше 0');
         }
-
-        return null;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getId()
-    {
-        return $this->id;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function getAuthKey()
-    {
-        return $this->authKey;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function validateAuthKey($authKey)
-    {
-        return $this->authKey === $authKey;
-    }
-
-    /**
-     * Validates password
-     *
-     * @param string $password password to validate
-     * @return bool if password provided is valid for current user
-     */
-    public function validatePassword($password)
-    {
-        return $this->password === $password;
+        try
+        {
+            $user_to->balance += $sum;
+            $user_to->save();
+            $user_from->balance -= $sum;
+            $user_from->save();
+            $transaction = new Transaction();
+            $transaction->attributes = [
+                'user_from' => $user_from,
+                'user_to' => $user_to,
+                'sum' => $sum,
+                'date' => Yii::$app->formatter->asDate('now', 'Y-m-d H:i:s'),
+            ];
+            $transaction->save();
+            $transactionDB->commit();
+        } catch(\Exception $e) {
+            $transactionDB->rollBack();
+            throw $e;
+        } catch(\Throwable $e) {
+            $transactionDB->rollBack();
+            throw $e;
+        }
+        return $user_from->balance;
     }
 }
